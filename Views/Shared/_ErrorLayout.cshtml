@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - SAWYERSIGHT</title>
+    <link href="https://fonts.googleapis.com/css?family=Barlow" rel="stylesheet">
+    @Styles.Render("~/Content/kendo/css")
+    @Styles.Render("~/Content/css")
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.18/datatables.min.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top" style="padding-top:0px; padding-bottom:0px; border-top:2px solid #37474f">
+        <div class="container" style="padding-top:0px !important; padding-bottom:0px !important;">
+            <a href="@Url.Action("Index","Home")"><img src="~/Content/images/logo-small.png" width="120" height="60" alt="SawyerSight logo" /></a>
+            @if (HttpContext.Current.User.Identity.IsAuthenticated)
+            {                
+                @Html.ActionLink("Sign Out", "SignOut", "Account", null, new { @class = "nav-link" })                
+            }
+            </div>
+    </nav>
+
+    <div class="container" style="padding-top:0px !important; padding-bottom:0px !important;">
+        <h1 class="text-danger">@ViewBag.Title</h1>
+        @RenderBody()
+    </div>
+</body>
+</html>

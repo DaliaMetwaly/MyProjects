@@ -1,0 +1,55 @@
+﻿
+@{
+    ViewBag.Title = "LoadETLData";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<h2>ETL Data loading progress</h2>
+<div class="progress">
+    <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" id="theprogressbar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 1%"><span id="percentText">1%</span></div>
+</div>
+<ul id="discussion"></ul>
+
+<script>
+    $(function () {
+        // Reference the auto-generated proxy for the hub.
+        var chat = $.connection.eTLToLiveMigrationHub;
+        // Create a function that the hub can call back to display messages.
+        chat.client.addNewMessageToPage = function (message, percentage) {
+            // Add the message to the page.
+            $('#discussion').append('<li><strong>' + htmlEncode(message)
+                + '</strong></li>');
+            $('#discussion').fadeIn();
+            $('#theprogressbar').attr('aria-valuenow', percentage).css('width', percentage + '%');
+            $('#percentText').html(percentage + '%');
+        };
+        // Start the connection.
+        $.connection.hub.start().done(function () {
+
+        });
+    });
+    // This optional function html-encodes messages for display in the page.
+    function htmlEncode(value) {
+        var encodedValue = $('<div />').text(value).html();
+        return encodedValue;
+    }
+</script>
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        $.getJSON('@Url.Action("ExtractAndImportClientArchive", "Waterfall")',
+            {},
+            function (data) {
+                if (!data&&data!='FAILURE') {
+                    window.location.href = '@Url.Action("SelectOrganizations", "Waterfall")';
+                }
+                else {
+                    alert(data);
+                }
+            });
+
+    });
+
+</script>

@@ -1,0 +1,59 @@
+﻿@model List<SawyerSight.Models.DAL.Demographics>
+@{
+    ViewBag.Title = "Demographic Options";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row" id="boxesDiv">
+    @Html.Partial("/Views/Shared/_ClientProjectCards.cshtml")
+</div>
+
+<div class="row">
+    <div class="col-md-9">
+        <br />
+        <h4>@ViewBag.Title</h4>
+    </div>
+</div>
+@using (Html.BeginForm("SelectDemographics", "Waterfall", FormMethod.Post, new { @style = "width:100%;", @id = "demographicsForm" }))
+{
+<div class="jumbotron existing-client">
+
+   
+
+    @foreach (var m in Model)
+    {
+
+        <label class="full-width container-checkbox">
+            @m.Name
+            <input type="checkbox" id="@m.Name" name="chxDemographics" class="demographicsCheck" value="@m.Id" @m.Checked>
+            <span class="checkmark-checkbox"></span>
+        </label>
+    }
+</div>
+
+    <input id="organizations" type="hidden" value="" />
+    <div class="form-row center-elements">
+        <a href="#" id="btnSubmitDemographics" class="btn btn-lg red-button"><small>SAVE SELECTIONS AND CONTINUE   <i class="fas fa-arrow-right"></i></small></a>
+    </div>
+    <div class="form-row center-elements">
+        <a href="@Url.Action("SelectClient")" class="btn btn-lg gray-button"><small>CANEL THIS REQUEST AND EXIT</small></a>
+    </div>
+    <br />
+    <br />
+
+}
+
+    <script>
+        $(document).ready(function ()
+        {
+            $('#btnSubmitDemographics').click(function (event) {
+                event.preventDefault();
+                SubmitDemographics(event);
+            });
+
+           
+
+
+        });
+    </script>
+

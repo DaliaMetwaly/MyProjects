@@ -1,0 +1,63 @@
+﻿<style type="text/css">
+    @@media (max-height: 810px) {
+    }
+        .container.body-content form {
+            position: relative;
+            margin-bottom: 65px;
+        }
+    
+
+     @@media (max-width: 991px) {
+        .container.body-content form label.full-width {
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+    .container.body-content form label.full-width input {
+            position: absolute;
+            right: 0;
+            top: 15px
+        }
+    }
+</style>
+
+@model List<SawyerSight.Models.DAL.Client>
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var newClient = TempData["NewClient"] != null ? TempData["NewClient"].ToString() : "";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-9">
+        <h2>@ViewBag.Title</h2>
+    </div>
+</div>
+
+@using (Html.BeginForm("SelectClient", "Waterfall", FormMethod.Post))
+{
+    <div class="jumbotron existing-client">
+
+        @foreach (var m in Model)
+        {
+            <label class="full-width">
+                @if (newClient == m.ClientID)
+                {
+                    @m.ClientName
+                    <input type="radio" name="client" value="@m.UniqueID|@m.ClientID|@m.ClientName" required checked>
+                }
+                else
+                {
+                    @m.ClientName
+                    <input type="radio" name="client" value="@m.UniqueID|@m.ClientID|@m.ClientName" required>
+                }
+            </label>
+        }
+    </div>
+    <div class="form-row center-elements">
+        <button type="submit" class="btn btn-lg red-button"><small>SAVE SELECTIONS AND CONTINUE  <i class="fas fa-arrow-right"></i></small></button>
+    </div>
+    <div class="form-row center-elements">
+    </div>
+}

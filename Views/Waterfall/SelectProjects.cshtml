@@ -1,0 +1,137 @@
+﻿@using SawyerSight.Models.ViewModel;
+@using SawyerSight.Web.Models;
+@using SawyerSight.Models.DAL;
+@{
+    /**/
+    var context = (SawyerSight.Web.Models.ViewModel.WaterfallContext)Session["WaterfallContext"];
+    if(context.SelectedProjects.VisibleUncheckedNodes==null)
+    {
+        context.SelectedProjects.VisibleUncheckedNodes = new List<string>();
+    }
+    context.SelectedProjects.VisibleUncheckedNodes.RemoveAll(x => x == "");
+
+    if(context.SelectedProjects.CheckedNodes==null)
+    {
+        context.SelectedProjects.CheckedNodes = new List<string>();
+    }
+    context.SelectedProjects.CheckedNodes.RemoveAll(x => x == "");
+    ViewBag.Title = "Select Project";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row" id="boxesDiv">
+    @Html.Partial("/Views/Shared/_ClientProjectCards.cshtml")
+    <div class="col-md-4 align-text-bottom-">
+        <div class="card flex-row card-height">
+            <div class="card-header cardheader cardheader-padding">
+                <i class="fas fa-list-ul fa-2x"></i>
+            </div>
+            <div class="card-body invitations-info">
+                <div>
+                    <p class="card-text project-card-label">Select individual <b>Projects</b> or</p>
+                </div>
+                <select class="form-control form-control-ddl-padding" id="cmbSelectProjects">
+                    <option></option>
+                    <option value="Clear">Clear All</option>
+                    <option value="All">All Projects</option>
+                    <option value="Active">All Active Projects</option>
+                    <option value="Inactive">All Inactive Projects</option>
+                </select>
+            </div>
+            
+        </div>
+    </div>
+</div>
+<br />
+@using (Html.BeginForm("SelectProjects", "Waterfall", FormMethod.Post, new { @style = "width:100%;" }))
+{
+    <div class="row">
+        <script id="cbx-template" type="text/x-kendo-template">
+            <div style="text-align:center">
+                <input type="checkbox" id="cbx#=Value.Id#" name="chxProj" class="regular-checkbox big-checkbox checkItem" data-bind="checked: checked" activeFlag="#=Value.ActiveFlag#" parentId="#=Value.ParentId#" value="#=Value.Id#" onclick="SelectMyChildren('#=Value.Id#', true)">
+                <label for="checkbox-2-1"></label>
+            </div>
+        </script>
+        @(Html.Kendo().TreeList<TreeEntity<Project>>()
+                            .Name("treelist")
+                            .Columns(columns =>
+                            {
+                                columns.Add().Field(e => e.Value.Id).Width(280).Title("PROJECT ID");
+                                columns.Add().Field(e => e.Value.Name).Width(280).Title("PROJECT NAME");
+                                columns.Add().Field(e => e.Value.ActiveFlag).Width(60).Title("ACTIVE");
+                                columns.Add().Width(60).Title("SELECT").TemplateId("cbx-template");
+                            })
+                            .Sortable()
+                            .DataSource(dataSource => dataSource
+                                .Read(read => read.Action("ProjectsTree_Read", "Waterfall"))
+                                .Model(m =>
+                                {
+                                    m.Id(f => f.Id);
+                                    m.ParentId(f => f.ParentId).DefaultValue(null);
+                                    m.Field(f => f.Value.Id);
+                                    m.Field(f => f.Value.ParentId);
+                                })
+                                )
+                                .Events(events => { events.DataBound("onProjectsTreeDataBound"); events.Expand("onTreeExpand"); })
+                               
+        )
+    </div>
+    <br />
+    <div class="row">
+        <h4>Select Project Level to Report</h4>
+    </div>
+    <div class="row">
+        <table id="projectLevelTable" class="table" style="width:100%">
+            <thead class="table-dark-header">
+                <tr>
+                    <th width="20%"></th>
+                    <th width="10%">Level</th>
+                    <th width="40%">Example</th>
+                    <th width="10%"></th>
+                    <th width="20%"></th>
+                </tr>
+            </thead>
+            <tbody id="projectLevelTableBody">
+                <tr>
+                    <td></td>
+                    <td>1</td>
+                    <td>XXXX</td>
+                    <td>
+                        <input type="radio" name="projectLevel" value="1" required>
+                    </td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>2</td>
+                    <td>XXXX.XXXX</td>
+                    <td>
+                        <input type="radio" name="projectLevel" value="2" required>
+                    </td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="form-group row center-elements">
+        <input type="hidden" id="selectedProjectLevel" name="selectedProjectLevel" value="@context.SelectedProjectsLevel.ToString()" />
+        <input type="hidden" id="hiddenActionLoggerChecked" name="hiddenActionLoggerChecked"  value="@string.Join(",",context.SelectedProjects.CheckedNodes)" />
+        <input type="hidden" id="hiddenActionLoggerUnChecked" name="hiddenActionLoggerUnChecked" value="@context.SelectedProjects.SelectAllInactive.ToString()"/>
+        <input type="hidden" id="selectAllActive" name="selectAllActive" value="@context.SelectedProjects.SelectAllActive.ToString().ToLower()"/>
+        <input type="hidden" id="selectAllInactive" name="selectAllInactive" value="@context.SelectedProjects.SelectAllInactive.ToString().ToLower()" />
+        <button type="submit" class="btn btn-lg red-button"><small>SAVE SELECTIONS AND CONTINUE  <i class="fas fa-arrow-right"></i></small></button>
+    </div>
+    <div class="form-group row center-elements">
+        <a href="@Url.Action("SelectClient")" class="btn btn-lg gray-button"><small>CANCEL THIS REQUEST AND EXIT</small></a>
+    </div>
+    <br />
+}
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#cmbSelectProjects").on("change", function () {
+            var value = $(this).val();
+            CheckByValueAndType(value, 'chxProj');
+        });
+        ProcessLoadedContext();
+    })
+</script>

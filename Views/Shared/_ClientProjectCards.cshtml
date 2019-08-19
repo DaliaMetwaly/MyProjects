@@ -1,0 +1,31 @@
+﻿@{
+    var context = (SawyerSight.Web.Models.ViewModel.WaterfallContext)Session["WaterfallContext"];
+    if (context == null)
+    {
+        context = new SawyerSight.Web.Models.ViewModel.WaterfallContext();
+    }
+}
+<div class="col-md-4">
+    <div class="card flex-row card-height">
+        <div class="card-header cardheader cardheader-padding">
+            <i class="far fa-building fa-2x"></i>
+        </div>
+        <div class="card-body invitations-info" style="width:280px">
+            <span class="card-text project-card-label">Client Name</span>
+            <div style="word-wrap: break-word;">
+                <h4 class="card-title">@context.ClientName - @context.ClientID</h4>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="col-md-4">
+    <div class="card flex-row card-height">
+        <div class="card-header cardheader cardheader-padding">
+            <i class="far fa-folder fa-2x"></i>
+        </div>
+        <div class="card-body invitations-info">
+            <p class="card-text project-card-label">Project Name</p>
+            <input type="text" class="form-control" id="inputProjectName" name="inputProjectName" placeholder="Project Waterfall" readonly value="@context.ProjectName" />
+        </div>
+    </div>
+</div>

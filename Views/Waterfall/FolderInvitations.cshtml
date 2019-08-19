@@ -1,0 +1,189 @@
+﻿@model List<OneDriveInvitedUser>
+@using SawyerSight.Models.ViewModel;
+@using SawyerSight.Web.Models;
+@using SawyerSight.Models.DAL;
+@{
+    /**/
+    var clientFolderID = (string)Session["clientFolder"];
+    var projectName = Session["ProjectName"] != null ? Session["ProjectName"] : "";
+    var context = (SawyerSight.Web.Models.ViewModel.WaterfallContext)Session["WaterfallContext"];
+    var availableFiles = (SawyerSight.Graph.Models.FolderItems.FolderItems)TempData["FolderItems"];
+    var latestFile = (SawyerSight.Graph.Models.FolderItems.Value)TempData["LatestFile"];
+    var shareLink = (SawyerSight.Graph.Models.FolderPermissions.Link)TempData["ShareLink"];
+    if (context.SelectedProjects.VisibleUncheckedNodes == null)
+    {
+        context.SelectedProjects.VisibleUncheckedNodes = new List<string>();
+    }
+    context.SelectedProjects.VisibleUncheckedNodes.RemoveAll(x => x == "");
+
+    if (context.SelectedProjects.CheckedNodes == null)
+    {
+        context.SelectedProjects.CheckedNodes = new List<string>();
+    }
+    context.SelectedProjects.CheckedNodes.RemoveAll(x => x == "");
+    ViewBag.Title = "Folder Invitations";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+@using (Html.BeginForm("LoadETLData", "Waterfall", FormMethod.Post))
+{
+    <div class="row" id="boxesDiv">
+        <div class="col-md-4">
+            <div class="card flex-row card-height">
+                <div class="card-header cardheader cardheader-padding">
+                    <i class="far fa-building fa-2x"></i>
+                </div>
+                <div class="card-body invitations-info" style="width:280px">
+                    <span class="card-text">Client Name</span>
+                    <div style="word-wrap: break-word;">
+                        <h4 class="card-title">@context.ClientName - @context.ClientID</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card flex-row card-height">
+                <div class="card-header cardheader cardheader-padding">
+                    <i class="far fa-folder fa-2x"></i>
+                </div>
+                <div class="card-body invitations-info">
+                    <p class="card-text project-card-label">Project Name</p>
+                    <input type="text" class="form-control" id="inputProjectName" name="inputProjectName" placeholder="Project Waterfall" value="@projectName" required />
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <br />
+    if (availableFiles == null || latestFile == null)
+    {
+        <h3>There are no archives available in the client's folder</h3>
+    }
+    else if (availableFiles != null && availableFiles.value.Count == 0)
+    {
+        <h3> There are no archives available in the client's folder</h3>
+    }
+    else
+    {<div class="row">
+            <div class="col-8">
+                <div class="card">
+                    <div class="card-header card-darkgrey-background">
+                        <b>Selected CostPoint Dataset:</b>
+                    </div>
+                    <div class="card-body card-body-padding card-gray-background">
+                        <h5 class="data-heading">Name: <span class="data-span">@latestFile.name</span></h5>
+                        <h5 class="data-heading">Modified By: <span class="data-span">@latestFile.lastModifiedBy.user.email</span></h5>
+                        <h5 class="data-heading">Modified On: <span class="data-span">@latestFile.lastModifiedDateTime</span></h5>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    }
+    if (shareLink != null)
+    {
+        <a href="@shareLink.webUrl" target="_blank" style="color:#3a4950">@shareLink.webUrl</a>
+    }
+
+    <br />
+    <div class="row">
+        <div class="col-6 nopadding"><h3 class="drive-container">One Drive Shared Invitations</h3></div>
+        <div class="col-6 text-right nopadding"><a href="#" id="btnSendInvitation" class="btn red-button" style="float:right" data-toggle="modal" data-target="#invitationModal">Create Invitation</a></div>
+    </div>
+    <br />
+    <div class="row">
+        <table class="table">
+            <thead class="table-dark-header invitations-table-dark">
+                <tr>
+                    @*<th scope="col">#</th>*@
+                    <th scope="col">Email</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody class="invitations-table">
+                @foreach (var m in Model)
+                {
+                    <tr id="@m.ShareID">
+                        @*<th scope="row">@m.ID</th>*@
+                        <td>@m.Email</td>
+                        <td><a href="#" onclick="DeleteInvitation('@m.ShareID')"><i class="far fa-trash-alt" style="color:darkred"></i></a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <br />
+    if (availableFiles != null)
+    {
+        if (availableFiles.value.Count > 0 && latestFile != null)
+        {
+            <div class="form-group row center-elements">
+                <input type="hidden" id="archiveURL" name="archiveURL" value="@latestFile.downloadUrl.ToString()" />
+                <button type="submit" class="btn btn-lg red-button"><small>IMPORT DATA AND CONTINUE <i class="fas fa-arrow-right"></i></small></button>
+            </div>
+        }
+    }
+    <div class="form-group row center-elements">
+        <a href="@Url.Action("SelectClient")" class="btn btn-lg gray-button"><small>CANCEL THIS REQUEST AND EXIT</small></a>
+    </div>
+}
+<div class="modal fade" id="invitationModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            @using (Html.BeginForm("SendInvitation", "Waterfall", FormMethod.Post))
+            {
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Invitation</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="txtInvitationEmail">Email address</label>
+                        <input type="email" class="form-control" id="txtInvitationEmail" name="txtInvitationEmail" placeholder="Enter email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="txtInvitationText">Message</label>
+                        <textarea rows="3" class="form-control" id="txtInvitationText" name="txtInvitationText" placeholder="Message" required>Please put the archive in the root folder on One Drive, otherwise it will be ignored.
+Thank you</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="hiddenClientFolder" name="hiddenClientFolder" value="@clientFolderID" />
+                    <input type="hidden" id="hiddenProjectName" name="hiddenProjectName" value="" />
+                    <input type="hidden" id="respectEnter" value="true" />
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn red-button">Send Invitation</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        $("#inputProjectName").change(function () {
+            SaveProjectName();
+        })
+    });
+    function DeleteInvitation(id) {
+        var folderID = $('#hiddenClientFolder').val();
+        $.post('@Url.Action("DeleteShareInvitation", "Waterfall")',
+            {
+                ShareID: id,
+                FolderID:folderID
+            },
+            function (data, status) {
+                if (status == 'success') {
+                    document.getElementById(id).remove();
+                    alert('Invitation Successfully Removed. User Privileges Revoked.')
+                }
+
+            });
+    }
+
+    function SaveProjectName() {
+        var projectName = $("#inputProjectName").val();
+        $("#hiddenProjectName").val(projectName);
+    }
+</script>

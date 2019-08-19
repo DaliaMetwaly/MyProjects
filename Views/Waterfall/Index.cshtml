@@ -1,0 +1,370 @@
+﻿@using System.Data;
+@using System.Linq;
+
+@model List<DataTable>
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    var reportDataSetId = ViewBag.reportDataSetId;
+}
+<h2>Waterfall Report</h2>
+@*<div class="progress" id="progressBar">
+    <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" id="theprogressbar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 1%"><span id="percentText">1%</span></div>
+</div>
+<ul id="discussion"></ul>
+<script>
+    $(function () {
+        // Reference the auto-generated proxy for the hub.
+        var chat = $.connection.eTLToLiveMigrationHub;
+        // Create a function that the hub can call back to display messages.
+        chat.client.addNewMessageToPage = function (message, percentage) {
+            // Add the message to the page.
+            $('#discussion').append('<li><strong>' + htmlEncode(message)
+                + '</strong></li>');
+            $('#discussion').fadeIn();
+            $('#theprogressbar').attr('aria-valuenow', percentage).css('width', percentage + '%');
+            $('#percentText').html(percentage + '%');
+        };
+        // Start the connection.
+        $.connection.hub.start().done(function () {
+
+        });
+    });
+    // This optional function html-encodes messages for display in the page.
+    function htmlEncode(value) {
+        var encodedValue = $('<div />').text(value).html();
+        return encodedValue;
+    }
+</script>*@
+
+@(Html.Kendo().Spreadsheet()
+            .Name("spreadsheet")
+            .HtmlAttributes(new { style = "width:100%" })
+
+            .Sheets(sheets =>
+            {
+                DataColumn SubTotalColumn = (Model[0].Columns.Cast<DataColumn>
+                                ()).First(x => x.ColumnName.Contains("Revenue"));
+                int subTotalIndex = SubTotalColumn.Ordinal - 1;
+
+
+                //Handle Merged cells
+                var mergedCellStartIndex = (Model[0].Columns.Cast<DataColumn>().ToList().Where(x => x.ColumnName.Contains('_'))).ElementAt(0).Ordinal;
+                var mergedCellLength = Model[0].Columns.Cast<DataColumn>().ToList().Where(x => x.ColumnName.Contains('_')).GroupBy(x => x.ColumnName.Substring(0, x.ColumnName.IndexOf('_'))).Select(g => new { g.Key, Count = g.Count() }); ;
+
+                string[] mergerCellsArray = new string[mergedCellLength.Count()];
+                for (int i =0;i< mergedCellLength.Count();i++)
+                {
+                    var startLetter = SawyerSight.Web.Helpers.SpreadsheetLayoutHelper.GetExcelColumnName(mergedCellStartIndex + 1);
+                    var endLetter = SawyerSight.Web.Helpers.SpreadsheetLayoutHelper.GetExcelColumnName(mergedCellStartIndex + mergedCellLength.ElementAt(i).Count);
+                    mergerCellsArray[i] = $"{startLetter}3:{endLetter}3";
+                    mergedCellStartIndex = mergedCellStartIndex + mergedCellLength.ElementAt(i).Count;
+                }
+                //End of Handle Merged cells
+
+
+                sheets.Add().Name("Waterfall")
+                .MergedCells(mergerCellsArray)
+                    .Columns(columns =>
+                    {
+                        for (int i = 0; i < Model[0].Columns.Cast<DataColumn>().Count(); i++)
+                        {
+                            columns.Add().Width(150);
+                        }
+
+                    })
+
+                    .Rows(rows =>
+                    {
+                        rows.Add();
+                        rows.Add();
+
+                        rows.Add().Cells(cells =>
+                        {
+                            int StartIndex = (Model[0].Columns.Cast<DataColumn>().ToList().Where(x => x.ColumnName.Contains('_'))).ElementAt(0).Ordinal;
+                            for (int i=0;i< mergedCellLength.Count();i++) {
+
+                                cells.Add()
+                                .Value(mergedCellLength.ElementAt(i).Key)
+                                .Index(StartIndex)
+                                .TextAlign(SpreadsheetTextAlign.Center)
+                                .Bold(true);
+                                StartIndex = StartIndex + mergedCellLength.ElementAt(i).Count;
+                            }
+                        });
+                        rows.Add().Cells(cells=>
+                        {
+                            foreach (var m in Model[0].Columns.Cast<DataColumn>())
+                            {
+                                var colName = m.ColumnName;
+                                if (m.ColumnName.Contains("_"))
+                                {
+                                    var yearName = m.ColumnName.Substring(m.ColumnName.IndexOf("_")+1, m.ColumnName.Length - m.ColumnName.IndexOf("_")-1 );
+                                    int monthCount = Model[2].Rows.Cast<DataRow>().AsEnumerable().Where(x=> !x.IsNull($"{yearName}")).Select(x => x[$"{yearName}"]).ToList().Count;
+                                    if(monthCount==12)
+                                    {
+                                        colName = "FY" + yearName.Substring(2);
+                                    }
+                                    else if(monthCount < 12)
+                                    {
+                                        colName = "YTD" + SawyerSight.Web.Helpers.SpreadsheetLayoutHelper.GetMonthNameByMonthNumber(Model[2].Rows.Cast<DataRow>().AsEnumerable().Where(x => !x.IsNull($"{yearName}")).Select(x => x[$"{yearName}"]).ToList().Select(x => int.Parse(x.ToString())).ToList().Max()) + yearName.Substring(2);
+
+                                    }
+                                }
+
+
+                                cells.Add()
+                                .Value(colName)
+                                .TextAlign(SpreadsheetTextAlign.Center)
+                                .Bold(true);
+                            }
+
+                        });
+
+                        rows.Add().Height(5).Cells(cells =>
+                        {
+                            foreach (var m in Model[0].Columns.Cast<DataColumn>
+                                ())
+                            {
+                                cells.Add()
+                                .Background("rgb(177, 199, 221)");
+
+                            }
+
+                        });
+
+
+                        //Render Waterfall Data
+                        foreach (var m in Model[0].Rows.Cast<DataRow>())
+                        {
+                            rows.Add().Cells(cells =>
+                            {
+                                int colIndex = 0;
+                                foreach (var c in m.ItemArray)
+                                {
+                                    var bb = m.Table.Columns[colIndex].ColumnName.Contains("Margin");
+                                    string formatVar = "_(* #,##0_);_(* (#,##0);_(* -??_);_(@_)";
+                                    SpreadsheetTextAlign align=new SpreadsheetTextAlign();
+                                    if (c is DateTime)
+                                    {
+                                        formatVar = "m/d/yyyy";
+                                        align= SpreadsheetTextAlign.Center;
+                                    }
+                                    else if (c is String)
+                                    {
+                                        align = SpreadsheetTextAlign.Left;
+                                    }
+                                    else if (c is Decimal)
+                                    {
+                                        align = SpreadsheetTextAlign.Right;
+                                    }
+                                    else if (c is Char)
+                                    {
+                                        align = SpreadsheetTextAlign.Center;
+                                    }
+
+
+                                    if (m.Table.Columns[colIndex].ColumnName.Contains("Margin"))
+                                    {
+                                        formatVar = @"_(* #,##0 \%_);_(* (#,##0  \%);_(* -??_);_(@_)";
+                                    }
+
+                                    cells.Add()
+                                    .Value(c)
+                                    .Format(formatVar)
+                                    .TextAlign(align);
+                                    colIndex++;
+                                }
+                            });
+                        }
+                        //Render SubTotal
+
+                        rows.Add().Cells(cells =>
+                        {
+
+                            cells.Add().Index(subTotalIndex)
+                            .Value("Subtotal per Waterfall")
+                            .TextAlign(SpreadsheetTextAlign.Left)
+                            .Bold(true);
+
+                            var colCount = Model[0].Columns.Cast<DataColumn>
+                                ().Count() - 1;
+                            var rowCount = Model[0].Rows.Cast<DataRow>
+                                ().Count() + 5;
+
+                            string formatVar = "_(* #,##0_);_(* (#,##0);_(* -??_);_(@_)";
+                            for (int i = subTotalIndex + 1; i <= colCount; i++)
+                            {
+                                var startLetter = SawyerSight.Web.Helpers.SpreadsheetLayoutHelper.GetExcelColumnName(i + 1);
+
+                                cells.Add().Index(i)
+                                .Formula($"SUM({startLetter}6:{startLetter}{rowCount})")
+                                .Format(formatVar)
+                                .TextAlign(SpreadsheetTextAlign.Right)
+                                .Bold(true);
+
+                            }
+                        });
+
+                        //store Trial Balance Accounts in Dictionary
+                        Dictionary<string, string>
+                            trialBalanceAccount = new Dictionary<string, string>
+                                ();
+                        //store Trial Balance Accounts Sum in Dictionary
+                        Dictionary<int, decimal>
+                            trialBalanceAccountSum = new Dictionary<int, decimal>
+                                ();
+
+                        foreach (var m in Model[1].Rows.Cast<DataRow>
+                            ())
+                        {
+                            var accountType = m.ItemArray.GetValue(3);
+                            DataColumn accountTypeColumn = (Model[0].Columns.Cast<DataColumn>
+                                ()).First(x => x.ColumnName.Contains(accountType.ToString()));
+                            int BalanceIndex = accountTypeColumn.Ordinal;
+
+                            if (trialBalanceAccount.ContainsKey(m.ItemArray.GetValue(0).ToString() + "/" + m.ItemArray.GetValue(1).ToString()))
+                            {
+                                var tempVal = trialBalanceAccount[m.ItemArray.GetValue(0).ToString() + "/" + m.ItemArray.GetValue(1).ToString()] + "," + m.ItemArray.GetValue(2).ToString() + "+" + BalanceIndex;
+                                trialBalanceAccount[m.ItemArray.GetValue(0).ToString() + "/" + m.ItemArray.GetValue(1).ToString()] = tempVal;
+                            }
+                            else
+                            {
+                                trialBalanceAccount.Add(m.ItemArray.GetValue(0).ToString() + "/" + m.ItemArray.GetValue(1).ToString(), m.ItemArray.GetValue(2).ToString() + "+" + BalanceIndex);
+
+                            }
+
+                            //Trial Balance Acount Sum
+                            if (trialBalanceAccountSum.ContainsKey(BalanceIndex))
+                            {
+                                trialBalanceAccountSum[BalanceIndex] += (decimal)m.ItemArray.GetValue(2);
+                            }
+                            else
+                            {
+                                trialBalanceAccountSum.Add(BalanceIndex, (decimal)m.ItemArray.GetValue(2));
+                            }
+
+                        }
+
+
+
+                        //Render Trial Balance Summary Total
+
+                        rows.Add().Cells(cells =>
+                        {
+                         
+                            cells.Add().Index(subTotalIndex)
+                            .Value("Subtotal per TB")
+                            .TextAlign(SpreadsheetTextAlign.Left)
+                            .Bold(true);
+
+                            var rowCount = Model[0].Rows.Cast<DataRow>().Count() + 10;
+                            string formatVar = "_(* #,##0_);_(* (#,##0);_(* -??_);_(@_)";
+                            foreach (var sum in trialBalanceAccountSum.OrderBy(x => x.Key))
+                            {
+                                var startLetter = SawyerSight.Web.Helpers.SpreadsheetLayoutHelper.GetExcelColumnName(sum.Key + 1);
+                                cells.Add().Index(sum.Key)
+                                .Formula($"SUM({startLetter}{rowCount}:{startLetter}{trialBalanceAccount.Count() + rowCount})")
+                                .Format(formatVar)
+                                .TextAlign(SpreadsheetTextAlign.Right)
+                                .Bold(true);
+                            }
+
+                        });
+
+                        //Render Delta between  Trial Balance Summary Total and SubTotal per Waterfall
+
+                        rows.Add().Cells(cells =>
+                        {
+                            cells.Add().Index(subTotalIndex)
+                            .Value("Variance")
+                            .TextAlign(SpreadsheetTextAlign.Left)
+                            .Bold(true);
+
+                            var rowCount = Model[0].Rows.Cast<DataRow>
+                                ().Count();
+                            string formatVar = "_(* #,##0_);_(* (#,##0);_(* -??_);_(@_)";
+                            foreach (var sum in trialBalanceAccountSum.OrderBy(x => x.Key))
+                            {
+                                var startLetter = SawyerSight.Web.Helpers.SpreadsheetLayoutHelper.GetExcelColumnName(sum.Key + 1);
+                                cells.Add().Index(sum.Key)
+                                .Formula($"{startLetter}{rowCount + 6}-{startLetter}{rowCount + 7}")
+                                .Format(formatVar)
+                                .TextAlign(SpreadsheetTextAlign.Right)
+                                .Bold(true);
+                            }
+
+                        });
+
+
+                        //Render Trial Balance Summary
+
+                        rows.Add();
+
+                        rows.Add().Cells(cells =>
+                        {
+
+                            cells.Add()
+                            .Value("TB Tie-Out")
+                            .TextAlign(SpreadsheetTextAlign.Center);
+                        });
+
+                        foreach (var m in trialBalanceAccount)
+                        {
+                            rows.Add().Cells(cells =>
+                            {
+
+                                var accountInfo = m.Key.Split('/');
+
+                                cells.Add().Index(1)
+                                .Value(accountInfo[0])
+                                .TextAlign(SpreadsheetTextAlign.Left);
+
+                                cells.Add().Index(2)
+                                .Value(accountInfo[1])
+                                .TextAlign(SpreadsheetTextAlign.Left);
+
+
+                                var accountValues = m.Value.Split(',');
+                                string formatVar = "_(* #,##0_);_(* (#,##0);_(* -??_);_(@_)";
+
+                                foreach (var val in accountValues)
+                                {
+
+                                    var accountVal = val.Split('+');
+
+                                    cells.Add().Index(int.Parse(accountVal[1]))
+                                    .Value(decimal.Parse(accountVal[0]))
+                                    .Format(formatVar)
+                                    .TextAlign(SpreadsheetTextAlign.Right);
+                                }
+
+
+                            });
+
+                        }
+
+                    });
+            }).Events(e => e.Render("render"))
+                                                            )
+                                                            <script>
+                                                                function render() {
+                                                                    $("[title=Filter]").hide();
+
+                                                                }
+
+                                                                $(window).load(function () {
+                                                                    var spreadsheet = $("#spreadsheet").data("kendoSpreadsheet");
+                                                                    var sheet = spreadsheet.activeSheet();
+
+                                                                    sheet.frozenColumns(3)
+                                                                    sheet.frozenRows(5);
+                                                                });
+                                                            </script>
+
+
+
+
+

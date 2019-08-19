@@ -1,0 +1,60 @@
+{
+  "ExecutionID": "493adc00-0cfd-4d69-a8b0-1380f91022c2",
+  "ScriptVersion": "v1.8",
+  "ExportEngine": "SqlDataAdapter",
+  "Status": "SUCCESS",
+  "StartTime": "10/30/2018 11:04:54 AM",
+  "TablesInfo": [
+    {
+      "Status": "SUCCESS",
+      "TableName": "ACCT",
+      "TableExported": 1
+    },
+    {
+      "Status": "SUCCESS",
+      "TableName": "CUST",
+      "TableExported": 1
+    },
+    {
+      "Status": "SUCCESS",
+      "TableName": "FS_LN",
+      "TableExported": 1
+    },
+    {
+      "Status": "SUCCESS",
+      "TableName": "FS_LN_ACCT",
+      "TableExported": 1
+    },
+    {
+      "Status": "SUCCESS",
+      "TableName": "FY",
+      "TableExported": 1
+    },
+    {
+      "Status": "SUCCESS",
+      "TableName": "GL_POST_SUM",
+      "TableExported": 1
+    },
+    {
+      "Status": "SUCCESS",
+      "TableName": "ORG",
+      "TableExported": 1
+    },
+    {
+      "Status": "SUCCESS",
+      "TableName": "PROJ",
+      "TableExported": 1
+    },
+    {
+      "Status": "SUCCESS",
+      "TableName": "PSR_PY_BURD_SUM",
+      "TableExported": 1
+    },
+    {
+      "Status": "SUCCESS",
+      "TableName": "PSR_PY_SUM",
+      "TableExported": 1
+    }
+  ],
+  "EndTime": "10/30/2018 11:05:05 AM"
+}

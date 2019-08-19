@@ -1,0 +1,126 @@
+﻿@using SawyerSight.Models.DAL;
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<br />
+<div class="row">
+    <div class="col-md-9">
+        <h2>@ViewBag.Title</h2>
+    </div>
+</div>
+
+@(Html.Kendo().Grid<SawyerSight.Web.Models.DAL.ManageUserVM>()
+                            .Name("grid")
+                            .Columns(columns =>
+                            {
+                                columns.Bound(c => c.UPN).Width(210).HtmlAttributes(new { name = "UPN" });
+                                columns.Bound(p => p.UserRoles).ClientTemplate("#=RenderDropDownText(UserRoles)#").Width(50).Title("Role").Sortable(false);
+                                columns.Bound(p => p.UserClients).ClientTemplate("#=RenderMultiSelectText(UserClients)#").Width(280).Sortable(false);
+                                columns.Command(command => command.Destroy().Text("DELETE")).Width(70);
+                            })
+                            
+                            .ToolBar(toolBar =>
+                            {
+                                toolBar.Save();
+                                toolBar.Create().Text("Add User").HtmlAttributes(new { @class = "adduserbtn" });
+                            })
+                            .Editable(editable => editable.Mode(GridEditMode.InCell))                           
+                            .DataSource(dataSource => dataSource
+                                .Ajax()
+                                .Batch(true)
+                                .ServerOperation(false)
+                                .Events(events => events.Error("Error_Handler"))
+                                .Model(model =>
+                                {
+                                    model.Id(p => p.UPN);
+                                    model.Field(p => p.UPN);
+                                    model.Field(p => p.UserRoles).DefaultValue(ViewData["defaultRole"] as SawyerSight.Web.Models.DAL.Roles);
+                                    model.Field(p => p.UserClients).DefaultValue(new Client[] { new Client() { ClientName = "" } });
+                                })                         
+                                 .Read(read => read.Action("GetManageUsers", "Admin"))
+                                 .Update(update => update.Action("SaveManageUsers", "Admin"))
+                                 .Destroy(destroy => destroy.Action("DeleteUser", "Admin"))
+                                 .Create(create => create.Action("AddUser", "Admin"))
+                                 ).Events(e=>e.Edit("OnEdit"))
+)
+
+
+
+
+<div id='myModal' class='modal' style="text-align:right;">
+    <div class="modal-dialog" style="width:500px; height:310px; padding:10px;">
+        <div class="modal-content" style="overflow: auto; padding:10px;">
+            <a id="closbtn" style="cursor: pointer;">x</a>
+            <div style="height:10px;"> </div>
+            <div id='myModalContent' style="width:450px; height:310px; padding:10px;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var isCreating = false;
+    function Error_Handler(e) {
+        if (e.errors) {
+            var message = "Errors:\n";
+            $.each(e.errors, function (key, value) {
+                if ('errors' in value) {
+                    $.each(value.errors, function () {
+                        message += this + "\n";
+                    });
+                }
+            });
+            alert(message);
+        }
+    }
+    function RenderMultiSelectText(selectListArray) {
+       
+        if (selectListArray != undefined && selectListArray[0] != undefined) {
+            
+            var displayText = "";
+            $.each(selectListArray, function (index) {
+                displayText = displayText + selectListArray[index].ClientName + ', ';
+            });
+            return displayText.slice(0, -2);
+        }
+
+        else
+            return "";
+    }
+    function RenderDropDownText(dropDownList) {
+        if (dropDownList != undefined && dropDownList.RoleName != undefined) {
+            var displayText = "";
+            displayText = dropDownList.RoleName;
+            return displayText;
+        }
+
+        else
+            return "" ;
+      
+    }
+    $(document).ready(function () {
+        $("#grid thead [data-field=UPN] .k-link").html("User Name");
+    });
+    $(".k-grid-add").on("click", function (e) {
+        isCreating = true;
+        $('[name="UPN"]').removeAttr("disabled");
+    });   
+    function OnEdit(e)
+    {
+        if (isCreating)
+        {
+            $('[name="UPN"]').removeAttr("disabled");
+           isCreating = false;
+        }
+        else if ($(e.container[0]).attr("class").indexOf("k-dirty-cell") !== -1 && $(e.container[0]).attr("name") == "UPN")
+        {
+            $('[name="UPN"]').removeAttr("disabled"); 
+        }
+        
+        else
+        {
+            $('[name="UPN"]').attr("disabled", "true");
+        }                   
+    }
+</script>

@@ -1,0 +1,8 @@
+﻿@model IEnumerable<SawyerSight.Models.DAL.Client>
+
+@(Html.Kendo().MultiSelectFor(m => m)
+                .DataTextField("ClientName")
+                .DataValueField("UniqueID")
+                .BindTo((IEnumerable<SawyerSight.Models.DAL.Client>)ViewData["clients"])
+                .Value(new SawyerSight.Models.DAL.Client[] { new SawyerSight.Models.DAL.Client() { ClientName = "" } })
+                )

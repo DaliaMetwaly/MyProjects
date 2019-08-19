@@ -1,0 +1,64 @@
+﻿@*@using SawyerSight.Models.ViewModel;*@
+@using SawyerSight.Web.Models;
+@using SawyerSight.Models.DAL;
+@{
+    ViewBag.Title = "Select Fiscal Years to Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var context = (SawyerSight.Web.Models.ViewModel.WaterfallContext)Session["WaterfallContext"];
+}
+<br />
+<div class="row" id="boxesDiv">
+    @Html.Partial("/Views/Shared/_ClientProjectCards.cshtml")
+</div>
+<br />
+<div class="row">
+    <h4>Select Fiscal Years to Report</h4>
+</div>
+@using (Html.BeginForm("SelectFiscalYears", "Waterfall", FormMethod.Post, new { @style = "width:100%;" }))
+{
+    <div class="row">
+        <script id="cbx-template" type="text/x-kendo-template">
+            <div style="text-align:center">
+                <input type="checkbox" id="cbx#=Value.YearCode#" name="chxFiscal" class="regular-checkbox big-checkbox checkItem" data-bind="checked: checked" value="#=Value.YearCode#" onclick="SelectMyChildren('#=Value.YearCode#', true)">
+                <label for="checkbox-2-1"></label>
+            </div>
+        </script>
+        @(Html.Kendo().TreeList<TreeEntity<FiscalYear>>()
+                                                                        .Name("treelist")
+                                                                        .Columns(columns =>
+                                                                        {
+                                                                            columns.Add().Field(e => e.Value.Id).Width(200).Title("FISCAL YEAR CODE");
+                                                                            columns.Add().Field(e => e.Value.Status).Width(80).Title("STATUS");
+                                                                            columns.Add().Field(e => e.Value.Description).Width(280).Title("DESCRIPTION");
+                                                                            columns.Add().Width(60).Title("SELECT").TemplateId("cbx-template");
+                                                                        })
+                                                                .DataSource(dataSource => dataSource
+                                                                    .Read(read => read.Action("FiscalYearsTree_Read", "Waterfall"))
+                                                                    .Model(m =>
+                                                                    {
+                                                                        m.Id(f => f.Id);
+                                                                        m.ParentId(f => f.ParentId).DefaultValue(null);
+                                                                    })
+                                                                     .Events(events => { events.Change("revenuePropagate"); })
+                                                                     )
+                                                                    .Events(events => { events.DataBound("PreselectFiscalYears"); })
+                                                                    
+        )
+    </div>
+    <br />
+
+    <div class="form-row center-elements">
+        <input type="hidden" id="hiddenSelectedFY" name="hiddenSelectedFY" value="@string.Join(",",context.SelectedFiscalYears)" />
+        <button type="submit" class="btn btn-lg red-button"><small>SAVE SELECTIONS AND CONTINUE  <i class="fas fa-arrow-right"></i></small></button>
+    </div>
+    <div class="form-row center-elements">
+        <a href="@Url.Action("SelectClient")" class="btn btn-lg gray-button"><small>CANCEL THIS REQUEST AND EXIT</small></a>
+        <br />
+    </div>
+    <br />
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+    })
+</script>

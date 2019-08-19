@@ -1,0 +1,264 @@
+﻿@using SawyerSight.Models.ViewModel;
+@using SawyerSight.Web.Models;
+@using SawyerSight.Models.DAL;
+@{
+    ViewBag.Title = "Trial Balance Revenue Accounts";
+}
+<br />
+<div class="row" id="boxesDiv">
+    @Html.Partial("/Views/Shared/_ClientProjectCards.cshtml")
+</div>
+<br />
+
+<h4>Create Waterfall Categories and the Associated Trial Balance Accounts</h4>
+<br />
+@using (Html.BeginForm("TrialBalanceRevenue", "Waterfall", FormMethod.Post, new { @style = "width:100%;", @id = "accountsForm" }))
+{
+
+    <div class="row">
+        <div class="col-4">
+            Account Groups (ACCT_ID starts with):
+        </div>
+        <div class="col-8">
+            @(Html.Kendo().DropDownTree()
+                                                                                                                                                                              .AutoWidth(true)
+                                                                                                                                                                             .Name("startsWith")
+                                                                                                                                                                             .DataTextField("Name")
+                                                                                                                                                                             .DataValueField("Id")
+                                                                                                                                                                             .HtmlAttributes(new { style = "width: 100%" })
+                                                                                                                                                                             .Events(ev => ev.Change("refreshGrid"))
+                                                                                                                                                                             .CheckAll(true)
+                                                                                                                                                                             .AutoClose(false)
+                                                                                                                                                                             .Checkboxes(checkboxes => checkboxes
+                                                                                                                                                                                 .Name("checkedItems")
+                                                                                                                                                                                 .CheckChildren(true)
+                                                                                                                                                                             )
+                                                                                                                                                                               .DataSource(source =>
+                                                                                                                                                                               {
+                                                                                                                                                                                   source.Read(read =>
+                                                                                                                                                                                   {
+                                                                                                                                                                                       read.Action("FilterTrialBalanceAccounts_ID", "Waterfall");
+                                                                                                                                                                                   });
+                                                                                                                                                                               })
+            )
+        </div>
+    </div>
+    <br />
+    <div class="row">
+        @(Html.Kendo().Grid<Account>()
+                                                                                                                                                                                                            .Name("accountsGrid")
+                                                                                                                                                                                                            .HtmlAttributes(new { style="height:60%"})
+                                                                                                                                                                                                            .NoRecords(rec => rec.Template("Please select Account Categories from the menu above to see the Accounts here"))
+                                                                                                                                                                                                            .Columns(columns =>
+                                                                                                                                                                                                            {
+                                                                                                                                                                                                            //when ServerOperations of the Grid is enabled, dataSource should be provided for all the Filterable Multi Check columns
+                                                                                                                                                                                                            columns.Bound(e => e.Id);
+                                                                                                                                                                                                            columns.Bound(e => e.Name);
+                                                                                                                                                                                                            columns.Bound(e => e.Id).ClientTemplate("<div align=center><input type='radio' data-selector='Column1' data-item='#= Id #' name='#= Id #' value='#= Id #-Revenue1' onClick='SelectListChildren(this)' /></div>").HeaderTemplate(@<text><input id="txtContractRevenue" name="txtContractRevenue" class="form-control-sm" style="color:green; width:125px" type="text" value="Contract Revenue" /></text>);
+                                                                                                                                                                                                            columns.Bound(e => e.Id).ClientTemplate("<div align=center><input type='radio' class='hidden-element' data-item='#= Id #' data-selector='Column2' name='#= Id #' value='#= Id #-Revenue2' onClick='SelectListChildren(this)' /></div>").HeaderTemplate(@<text><input id="txtCustomRevenue1" name="txtCustomRevenue1" class="form-control-sm" style="color:green; width:125px" type="text" value="" data-item="1" onchange="AddColumn(this, 4)" placeholder="Custom Revenue" /></text>);
+                                                                                                                                                                                                            columns.Bound(e => e.Id).ClientTemplate("<div align=center><input type='radio' class='hidden-element' data-item='#= Id #' data-selector='Column3' name='#= Id #' value='#= Id #-Revenue2' onClick='SelectListChildren(this)' /></div>").Hidden(true).HeaderTemplate(@<text><input id="txtCustomRevenue2" name="txtCustomRevenue2" class="form-control-sm" style="color:green; width:125px" type="text" value="" data-item="2" onchange="AddColumn(this, 5)" placeholder="Custom Revenue" /></text>);
+                                                                                                                                                                                                            columns.Bound(e => e.Id).ClientTemplate("<div align=center><input type='radio' class='hidden-element' data-item='#= Id #' data-selector='Column4' name='#= Id #' value='#= Id #-Revenue3' onClick='SelectListChildren(this)' /></div>").Hidden(true).HeaderTemplate(@<text><input id="txtCustomRevenue3" name="txtCustomRevenue3" class="form-control-sm" style="color:green; width:125px" type="text" data-item="3" value="" placeholder="Custom Revenue" onchange="VisibleColumn(this,6)" /></text>);
+                                                                                                                                                                                                            columns.Bound(e => e.Id).ClientTemplate("<div align=center><button type='button' class='btn btn-sm resetButton' reset-value='#= Id #' onClick='ResetThis(this)'>Exclude</button></div>").HeaderTemplate(@<text></text>);
+                                                                                                                                                                                                            }).DataSource(dataSource => dataSource.Ajax().Read(read => read.Action("TrialBalanceAccountsTree_Read", "Waterfall")))
+                                                                                                                                                                                                                                                                                                    .Scrollable()
+        )
+    </div>
+    <br />
+    <div class="form-group row center-elements">
+        <button onclick="SubmitRevenues(); return false;" class="btn btn-lg red-button"><small>SAVE SELECTIONS AND CONTINUE   <i class="fas fa-arrow-right"></i></small></button>
+    </div>
+    <div class="form-group row center-elements">
+        <a href="@Url.Action("SelectClient")" class="btn btn-lg gray-button"><small>
+CANCEL THIS REQUEST AND EXIT </small></a>
+    </div>
+    <br />
+}
+<style>
+    .k-button {
+        width: 100px;
+    }
+</style>
+<script>
+    var revenueNames = {};
+    function ResetThis(obj) {
+        var radio = obj.getAttribute("reset-value");
+        var myRadios = document.getElementsByName(radio);
+        var setCheck;
+        var x = 0;
+        for (x = 0; x < myRadios.length; x++) {
+            myRadios[x].checked = false;
+            myRadios[x].onclick = function () {
+                if (setCheck != this) {
+                    setCheck = this;
+                } else {
+                    this.checked = false;
+                    setCheck = null;
+                }
+            };
+
+        }
+    }
+
+    // function that gathers IDs of checked nodes
+    function checkedNodeIds(nodes, checkedNodes) {
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].checked) {
+                checkedNodes.push(nodes[i].Id);
+            }
+        }
+    }
+
+    function AddColumn(textbox, index) {
+        var grid = $("#accountsGrid").data("kendoGrid");
+        var textboxId = $(textbox).attr('id');
+        var elementSelector = 'Column' + (index - 2);
+        if ($(textbox).val() == '') {
+            var currentId = $(textbox).attr("data-item");
+            nextId = parseInt(currentId) + 1;
+            if ($('[data-item="' + nextId + '"').length > 0 && $('[data-item="' + nextId + '"').first().val() != '') {
+                alert('You first must delete the last custom category');
+                $(textbox).val(revenueNames[textboxId]);
+                return;
+            }
+            $('[data-selector="' + elementSelector + '"').addClass("hidden-element");
+            grid.hideColumn(index);
+            $('[data-selector="' + elementSelector + '"').each(function () {
+                $(this).prop("checked", false);
+            });
+        }
+        else {
+            revenueNames[textboxId] = $(textbox).val();
+            grid.showColumn(index);
+            $('[data-selector="' + elementSelector + '"').removeClass("hidden-element");
+        }
+    }
+
+    function SelectListChildren(radioelement) {
+        var currentColumn = $(radioelement).attr("data-selector");
+        var currentId = $(radioelement).attr("data-item");
+        $('[data-selector="' + currentColumn + '"').each(function () {
+            if ($(this).attr("data-item").startsWith(currentId)) {
+                $(this).prop("checked", true);
+                console.log($(this).attr("data-item"));
+            }
+        });
+    }
+
+    function VisibleColumn(textbox, index) {
+        var elementSelector = 'Column' + (index - 2);
+        if ($(textbox).val() == '') {
+            $('[data-selector="' + elementSelector + '"').addClass("hidden-element");
+            $('[data-selector="' + elementSelector + '"').each(function () {
+                $(this).prop("checked", false);
+            });
+        }
+        else {
+            $('[data-selector="' + elementSelector + '"').removeClass("hidden-element");
+        }
+        
+    }
+
+    // show checked node IDs on datasource change
+    function refreshGrid() {
+        var checkedNodes = [],
+            dropDownTree = $("#startsWith").data("kendoDropDownTree"),
+            message;
+
+        checkedNodeIds(dropDownTree.dataSource.view(), checkedNodes);
+
+        if (checkedNodes.length > 0) {
+            message = "IDs of checked nodes: " + checkedNodes.join(",");
+        } else {
+            message = "No nodes checked.";
+        }
+        $.ajax({
+            url: '@Url.Action("TrialBalanceAccountsTree_Read", "Waterfall")',
+            data: { selectedAccounts: checkedNodes },
+            traditional: true,
+            success: function (result) {
+                searchResults = result;
+            }
+        }).done(function () {
+            var dataSource = new kendo.data.DataSource({ data: searchResults });
+            var grid = $('#accountsGrid').data("kendoGrid");
+            dataSource.read();
+            grid.setDataSource(dataSource);
+            refreshGridHeader();
+        });
+    }
+
+    function refreshGridHeader() {
+        VisibleColumn($('#txtCustomRevenue1'), 4);
+        VisibleColumn($('#txtCustomRevenue2'), 5);
+        VisibleColumn($('#txtCustomRevenue3'), 6);
+    }
+
+    function SubmitRevenues() {
+  
+        var selectedItem = $("[data-selector='Column1']").filter(':checked').length;
+        if (selectedItem == 0) {
+            alert('At least one Contract Revenue is mandatory');
+        }
+        else
+        {
+         
+            var checkedNodes = [],
+                dropDownTree = $("#startsWith").data("kendoDropDownTree");
+            var revenue1Nodes = new Array();
+            var revenue2Nodes = new Array();
+            var revenue3Nodes = new Array();
+            var revenue4Nodes = new Array();
+
+            $('[data-selector=Column1').each(function () {
+                if ($(this).prop("checked")) {
+                    revenue1Nodes.push($(this).attr("data-item"));
+                }
+            });
+
+            $('[data-selector=Column2').each(function () {
+                if ($(this).prop("checked")) {
+                    revenue2Nodes.push($(this).attr("data-item"));
+                }
+            });
+
+            $('[data-selector=Column3').each(function () {
+                if ($(this).prop("checked")) {
+                    revenue3Nodes.push($(this).attr("data-item"));
+                }
+            });
+
+            $('[data-selector=Column4').each(function () {
+                if ($(this).prop("checked")) {
+                    revenue4Nodes.push($(this).attr("data-item"));
+                }
+            });
+
+            checkedNodeIds(dropDownTree.dataSource.view(), checkedNodes);
+            var revenue1 = $('#txtContractRevenue').val();
+            var revenue2 = $('#txtCustomRevenue1').val();
+            var revenue3 = $('#txtCustomRevenue2').val();
+            var revenue4 = $('#txtCustomRevenue3').val();
+            var revenues = {
+                SelectedAccounts: checkedNodes,
+                Revenue1Name: revenue1,
+                Revenue2Name: revenue2,
+                Revenue3Name: revenue3,
+                Revenue4Name: revenue4,
+                Revenue1Nodes: revenue1Nodes,
+                Revenue2Nodes: revenue2Nodes,
+                Revenue3Nodes: revenue3Nodes,
+                Revenue4Nodes: revenue4Nodes
+            };
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("TrialBalanceRevenue", "Waterfall")',
+                data: revenues,
+                dataType: 'json'
+            }).done(function (data) {
+                window.location.replace('@Url.Action("TrialBalanceCosts", "Waterfall")');
+                }).fail(function (data) {
+                    debugger;
+                });
+            }
+    }
+</script>

@@ -1,0 +1,9 @@
+﻿@model SawyerSight.Web.Models.DAL.Roles
+
+@(Html.Kendo().DropDownListFor(m => m)
+                .DataValueField("ID")
+                .DataTextField("RoleName")
+                .BindTo((System.Collections.IEnumerable)ViewData["roles"])
+                .Value("1")
+)
+

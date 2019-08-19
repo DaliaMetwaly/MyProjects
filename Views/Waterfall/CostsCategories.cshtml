@@ -1,0 +1,122 @@
+﻿@using SawyerSight.Models.ViewModel;
+@using SawyerSight.Web.Models;
+@using SawyerSight.Models.DAL;
+@{
+    var context = (SawyerSight.Web.Models.ViewModel.WaterfallContext)Session["WaterfallContext"];
+    if (context == null)
+    {
+        context = new SawyerSight.Web.Models.ViewModel.WaterfallContext();
+    }
+    ViewBag.Title = "Costs Categories";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<div class="row" id="boxesDiv">
+    @Html.Partial("/Views/Shared/_ClientProjectCards.cshtml")
+</div>
+<br />
+
+<h4>Create Waterfall Categories and the Associated Trial Balance Accounts</h4>
+<br />
+<h3>Direct Cost Categories</h3>
+@using (Html.BeginForm("CostsCategories", "Waterfall", FormMethod.Post, new { @style = "width:100%;", @id="directCostsForm" }))
+{
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card flex-row card-gray-background" style="height:120px; padding:25px !important;">
+                <div class="form-group" style="width:100%">
+                    <label for="costsName"><strong>ENTER OTHER DIRECT COSTS CATEGORY NAME</strong></label>
+                    <input type="text" class="form-control" id="costsName" name="costsName" placeholder="Enter Costs name" style="width:100%" value="Other Direct Costs">
+                </div>
+            </div>
+            <div class="jumbotron-nopadding text-center">
+                <h4>Select The Trial Balance Accounts which are associated with this Category</h4>
+                <script id="cbx-template" type="text/x-kendo-template">
+                    <div style="text-align:center">
+                        <input type="checkbox" id="cbx#=Value.Id#" name="chxCosts" class="regular-checkbox big-checkbox checkItem" data-bind="checked: checked" activeFlag="#=Value.ActiveFlag#" actualAccount="#=Value.IsActualAccount#" parentId="#=Value.ParentId#" value="#=Value.Id#">
+                        <label for="checkbox-2-1"></label>
+                    </div>
+                </script>
+                @(Html.Kendo().TreeList<TreeEntityLazyLoading<Account>>()
+                    .Name("treelist")
+                    .Columns(columns =>
+                    {
+                        columns.Add().Field(e => e.Value.Id).Width(100).Title("ACOUNT ID");
+                        columns.Add().Field(e => e.Value.Name).Width(280).Title("ACCOUNT NAME");
+                        columns.Add().Field(e => e.Value.ActiveFlag).Width(60).Title("ACTIVE");
+                        columns.Add().Width(60).Title("SELECT").TemplateId("cbx-template");
+                    })
+                    .DataSource(dataSource => dataSource
+                    .Read(read => read.Action("CostsAccountsTree_Read", "Waterfall"))
+                    .Model(m =>
+                    {
+                        m.Id(f => f.Id);
+                        m.ParentId(f => f.ParentId).DefaultValue(null);
+                        m.Expanded(true);
+                    })
+                    .Events(events => { events.Change("revenuePropagate"); })
+                        )
+                        .Events(events => { events.DataBound("onRevenueDataBound"); })
+                        .Height(300)
+                )
+            </div>
+            <br />
+            <div class="form-group row">
+                <div class="col-6">
+                    <button id="btnOtherCosts" class="btn btn-lg gray-red-button" style="width:300px"><small>SAVE AND CONTINUE TO ADD OTHER DIRECT COST CATEGORIES</small></button>
+                </div>
+                <div class="col-6">
+                    <button id="submitCosts" class="btn btn-lg red-gray-button" style="float:right"><small>SAVE AND GENERATE WATERFALL  <i class="fas fa-arrow-right"></i></small></button>
+                </div>
+
+            </div>
+            <div class="form-group row center-elements">
+                <a href="@Url.Action("SelectClient")" class="btn btn-lg gray-button"><small>CANCEL THIS REQUEST AND EXIT</small></a>
+            </div>
+            <br/>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header card-darkgrey-background">
+                    OUTLINE OF CATEGORIES CREATED:
+                </div>
+                <div class="card-body card-gray-background">
+                    <h5>REVENUE</h5>
+                    <input type="hidden" id="selectedRevenue" name="selectedRevenue" />
+                    <ul id="revenueList">
+                        @if (context.RevenueAccounts != null)
+                        {
+                            foreach (var revenue in context.RevenueAccounts)
+                            {
+                                <li>@revenue.CategoryName</li>
+                            }
+                        }
+                    </ul>
+                    <h5>DIRECT COSTS</h5>
+                    <input type="hidden" id="selectedCosts" name="selectedCosts" />
+                    <ul id="costsList">
+                        @if (context.CostsAccounts != null)
+                        {
+                            foreach (var cost in context.CostsAccounts)
+                            {
+                                <li>@cost.CategoryName</li>
+                            }
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+    <script>
+        $(document).ready(function () {
+            $('#btnOtherCosts').click(function (event) {
+                event.preventDefault();
+                AddCostsCategory(event);
+            });
+            $('#submitCosts').click(function (event) {
+                event.preventDefault();
+                SubmitCostsCategory(event);
+            });
+        })
+    </script>

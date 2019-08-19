@@ -1,0 +1,79 @@
+@{
+    ViewBag.Title = "Waterfall Processor";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Waterfall Report</h2>
+<div class="progress" id="progressBar">
+    <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" id="theprogressbar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 1%"><span id="percentText">1%</span></div>
+</div>
+<ul id="discussion"></ul>
+<script>
+    $(function () {
+        // Reference the auto-generated proxy for the hub.
+        var chat = $.connection.eTLToLiveMigrationHub;
+        // Create a function that the hub can call back to display messages.
+        chat.client.addNewMessageToPage = function (message, percentage) {
+            // Add the message to the page.
+            $('#discussion').append('<li><strong>' + htmlEncode(message)
+                + '</strong></li>');
+            $('#discussion').fadeIn();
+            $('#theprogressbar').attr('aria-valuenow', percentage).css('width', percentage + '%');
+            $('#percentText').html(percentage + '%');
+        };
+        // Start the connection.
+        $.connection.hub.start().done(function () {
+
+        });
+    });
+    // This optional function html-encodes messages for display in the page.
+    function htmlEncode(value) {
+        var encodedValue = $('<div />').text(value).html();
+        return encodedValue;
+    }
+</script>
+
+@(Html.Kendo().Spreadsheet()
+                                    .Name("spreadsheet")
+                                    .HtmlAttributes(new { style = "width:100%; display:none; height:70%;" })
+
+                            .Sheetsbar(false)
+)
+<textarea rows="10" cols="120" class="hide-it">
+</textarea>
+<script>
+    $(document).ready(function () {
+
+        $.getJSON('@Url.Action("GenerateWaterfallReport", "Waterfall")',
+            {},
+            function (data) {
+                if (!data && data != 'FAILURE') {
+                    $("#discussion").hide();
+                    $("#progressBar").hide();
+                    $("#spreadsheet").show();
+                    var spreadsheet = $("#spreadsheet").data("kendoSpreadsheet");
+                   // var sheet = spreadsheet.activeSheet();
+                    $.getJSON("@Url.Action("GetGeneratedWaterfall", "Waterfall")")
+                    .done(function (spreadsheetData) {
+                        spreadsheet.fromJSON(spreadsheetData);
+                        });
+
+                    
+
+                  
+
+                   // sheet.hideColumn(0);
+
+                }
+                else {
+                    console.log(data);
+                }
+            });
+
+
+
+
+
+
+    });
+</script>

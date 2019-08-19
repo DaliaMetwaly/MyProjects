@@ -1,0 +1,73 @@
+﻿@model SawyerSight.Models.DAL.Client
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<br />
+<h2>Create a New Client</h2>
+@using (Html.BeginForm("CreateClient", "Waterfall", FormMethod.Post))
+{ 
+    <div class="jumbotron new-client">
+        <div class="form-row">
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="inputClientName"><strong>CLIENT NAME</strong></small>
+                <input type="text" class="form-control" id="ClientName" name="ClientName" placeholder="My New Client" value="@Model.ClientName" required>
+            </div>
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="inputClientID"><strong>CLIENT ID</strong></small>
+                <input type="text" class="form-control" id="ClientID" name="ClientID" placeholder="ID1234" value="@Model.ClientID" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="inputPrimaryContact"><strong>PRIMARY CONTACT</strong></small>
+                <input type="text" class="form-control" id="PrimaryContact" name="PrimaryContact" placeholder="Primary Contact" value="@Model.PrimaryContact" required>
+            </div>
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="inputContactEmail"><strong>CONTACT EMAIL</strong></small>
+                <input type="text" class="form-control" id="ContactEmail" name="ContactEmail" placeholder="Contact email" value="@Model.ContactEmail" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="inputAddress1"><strong>ADDRESS-1</strong></small>
+                <input type="text" class="form-control" id="ContactAddress1" name="ContactAddress1" placeholder="Address line 1" value="@Model.ContactAddress1" required>
+            </div>
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="inputPhoneNumber"><strong>PHONE NUMBER</strong></small>
+                <input type="text" class="form-control" id="PhoneNumber" name="PhoneNumber" placeholder="Phone number" value="@Model.PhoneNumber" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="inputAddress2"><strong>ADDRESS-2</strong></small>
+                <input type="text" class="form-control" id="ContactAddress2" name="ContactAddress2" placeholder="Address line 2" value="@Model.ContactAddress2">
+            </div>
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="inputCity"><strong>CITY</strong></small>
+                <input type="text" class="form-control" id="City" name="City" placeholder="City" value="@Model.City" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="inputState"><strong>STATE</strong></small>
+                @Html.DropDownListFor(x => x.State, SawyerSight.Web.Helpers.USStatesListHelper.GetStatesList(), new { @class = "form-control", @required= "Select State"})
+            </div>
+            <div class="form-group col-md-6 form-input-padding">
+                <small for="PostalCode"><strong>POSTAL CODE</strong></small>
+                <input type="text" class="form-control" id="PostalCode" name="PostalCode" placeholder="Postal code" value="@Model.PostalCode" required>
+            </div>
+        </div>
+
+    </div>
+    <div class="form-row center-elements">
+        <button type="submit" class="btn btn-lg red-button"><small>CREATE NEW CLIENT</small></button>
+    </div>
+    <div class="form-row center-elements">
+        <input type="hidden" id="UniqueID" name="UniqueID" value="@Model.UniqueID" />
+        <a href="@Url.Action("SelectClient")" class="btn btn-lg gray-button"><small>CANCEL REQUEST</small></a>
+    </div>
+}
+<script>
+
+</script>
+
